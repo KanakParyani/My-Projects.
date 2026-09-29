@@ -1,0 +1,287 @@
+# My-Projects.
+!pip install mysql-connector-python
+
+import mysql.connector
+
+try:
+    db = mysql.connector.connect(
+        host="sql12.freesqldatabase.com",
+        user="sql12809217",
+        password="j2XI1IWrrV",
+        database="sql12809217",
+        port=3306
+    )
+
+    print("Connected successfully!")
+
+except Exception as e:
+    print("Connection failed:", e)
+# ------------------------------
+# HOSPITAL MANAGEMENT SYSTEM
+# ------------------------------
+
+# --- Connect to MySQL ---
+try:
+    db = mysql.connector.connect(
+        host="sql12.freesqldatabase.com",
+        user="sql12809217",
+        password="j2XI1IWrrV",  # <-- replace with your DB password
+        database="sql12809217",
+        port=3306
+    )
+    cursor = db.cursor()
+    print("Connected to MySQL successfully!\n")
+except Exception as e:
+    print("Connection failed:", e)
+    raise SystemExit
+
+# --- Utility functions ---
+def display(keys, values):
+    for k, v in zip(keys, values):
+        print(f"{k}: {v}")
+    print("\n")
+
+def isEmpty(rows):
+    if len(rows) == 0:
+        print("No data is available.\n")
+
+def run(query, commit=False):
+    cursor.execute(query)
+    if commit:
+        db.commit()
+    return cursor.fetchall()
+
+# --- Create tables if not exists ---
+run("""CREATE TABLE IF NOT EXISTS patient_detail(
+    name VARCHAR(30) PRIMARY KEY,
+    gender VARCHAR(15),
+    age INT(3),
+    address VARCHAR(50),
+    contact VARCHAR(15)
+)""", commit=True)
+
+run("""CREATE TABLE IF NOT EXISTS doctor_details(
+    name VARCHAR(30) PRIMARY KEY,
+    specialisation VARCHAR(40),
+    age INT(3),
+    address VARCHAR(50),
+    contact VARCHAR(15),
+    fees INT(10),
+    monthly_salary INT(10)
+)""", commit=True)
+
+run("""CREATE TABLE IF NOT EXISTS nurse_details(
+    name VARCHAR(30) PRIMARY KEY,
+    age INT(3),
+    address VARCHAR(50),
+    contact VARCHAR(15),
+    monthly_salary INT(10)
+)""", commit=True)
+
+run("""CREATE TABLE IF NOT EXISTS other_workers_details(
+    name VARCHAR(30) PRIMARY KEY,
+    age INT(3),
+    address VARCHAR(50),
+    contact VARCHAR(15),
+    monthly_salary INT(10)
+)""", commit=True)
+
+run("""CREATE TABLE IF NOT EXISTS user_data(
+    username VARCHAR(30) PRIMARY KEY,
+    password VARCHAR(30) DEFAULT '000'
+)""", commit=True)
+
+# --- MAIN LOOP ---
+while True:
+    print("\n==============================")
+    print("     ⊹ Welcome To CityHospital ⊹")
+    print("==============================\n")
+
+    choice = input("1. Sign In\n2. Registration\n3. Exit\nEnter your choice: ")
+
+    if choice == "2":
+        # Registration
+        print("\n--- Register Yourself ---")
+        username = input("Enter username: ")
+        existing = run(f"SELECT * FROM user_data WHERE username='{username}'")
+        if existing:
+            print(f"User already exists. Password: {existing[0][1]}")
+        else:
+            password = input("Enter password: ")
+            run(f"INSERT INTO user_data(username, password) VALUES('{username}', '{password}')", commit=True)
+            print("Registration Successful!\n")
+
+    elif choice == "1":
+        # Sign In
+        print("\n--- Sign In ---")
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        user = run(f"SELECT password FROM user_data WHERE username='{username}'")
+        if not user:
+            print("Username not found. Please register first.\n")
+        elif user[0][0] != password:
+            print("Incorrect password!\n")
+        else:
+            print(f"Welcome, {username}!\n")
+
+            # Logged in menu
+            while True:
+                print("\n1. Administration\n2. Patient Details\n3. Sign Out")
+                menu = input("Enter choice: ")
+
+                # ------------------ ADMINISTRATION ------------------
+                if menu == "1":
+                    print("\n1. Display Details\n2. Add New Member\n3. Delete Member\n4. Exit")
+                    admin_choice = input("Enter choice: ")
+
+                    # Display details
+                    if admin_choice == "1":
+                        print("1. Doctors\n2. Nurses\n3. Others")
+                        disp_choice = input("Enter choice: ")
+
+                        if disp_choice == "1":
+                            rows = run("SELECT * FROM doctor_details")
+                            isEmpty(rows)
+                            for i, row in enumerate(rows, start=1):
+                                print(f"Doctor {i}:")
+                                display(["NAME","SPECIALISATION","AGE","ADDRESS","CONTACT","FEES","MONTHLY_SALARY"], row)
+
+                        elif disp_choice == "2":
+                            rows = run("SELECT * FROM nurse_details")
+                            isEmpty(rows)
+                            for i, row in enumerate(rows, start=1):
+                                print(f"Nurse {i}:")
+                                display(["NAME","AGE","ADDRESS","CONTACT","MONTHLY_SALARY"], row)
+
+                        elif disp_choice == "3":
+                            rows = run("SELECT * FROM other_workers_details")
+                            isEmpty(rows)
+                            for i, row in enumerate(rows, start=1):
+                                print(f"Worker {i}:")
+                                display(["NAME","AGE","ADDRESS","CONTACT","MONTHLY_SALARY"], row)
+
+                    # Add new member
+                    elif admin_choice == "2":
+                        print("1. Doctor\n2. Nurse\n3. Other Worker")
+                        add_choice = input("Enter choice: ")
+
+                        if add_choice == "1":
+                            name = input("Doctor Name: ")
+                            spe = input("Specialisation: ")
+                            age = int(input("Age: "))
+                            addr = input("Address: ")
+                            contact = input("Contact: ")
+                            fees = int(input("Fees: "))
+                            salary = int(input("Monthly Salary: "))
+                            run(f"INSERT INTO doctor_details VALUES('{name}','{spe}',{age},'{addr}','{contact}',{fees},{salary})", commit=True)
+                            print("Doctor Added Successfully!")
+
+                        elif add_choice == "2":
+                            name = input("Nurse Name: ")
+                            age = int(input("Age: "))
+                            addr = input("Address: ")
+                            contact = input("Contact: ")
+                            salary = int(input("Monthly Salary: "))
+                            run(f"INSERT INTO nurse_details VALUES('{name}',{age},'{addr}','{contact}',{salary})", commit=True)
+                            print("Nurse Added Successfully!")
+
+                        elif add_choice == "3":
+                            name = input("Worker Name: ")
+                            age = int(input("Age: "))
+                            addr = input("Address: ")
+                            contact = input("Contact: ")
+                            salary = int(input("Monthly Salary: "))
+                            run(f"INSERT INTO other_workers_details VALUES('{name}',{age},'{addr}','{contact}',{salary})", commit=True)
+                            print("Worker Added Successfully!")
+
+                    # Delete member
+                    elif admin_choice == "3":
+                        print("1. Doctor\n2. Nurse\n3. Other Worker")
+                        del_choice = input("Enter choice: ")
+
+                        if del_choice == "1":
+                            name = input("Doctor Name to delete: ")
+                            rows = run(f"SELECT * FROM doctor_details WHERE name='{name}'")
+                            if rows:
+                                print("Data Found:")
+                                display(["NAME","SPECIALISATION","AGE","ADDRESS","CONTACT","FEES","MONTHLY_SALARY"], rows[0])
+                                confirm = input("Delete? (y/n): ")
+                                if confirm.lower() == "y":
+                                    run(f"DELETE FROM doctor_details WHERE name='{name}'", commit=True)
+                                    print("Deleted Successfully!")
+                            else:
+                                print("No data found.")
+
+                        elif del_choice == "2":
+                            name = input("Nurse Name to delete: ")
+                            rows = run(f"SELECT * FROM nurse_details WHERE name='{name}'")
+                            if rows:
+                                display(["NAME","AGE","ADDRESS","CONTACT","MONTHLY_SALARY"], rows[0])
+                                confirm = input("Delete? (y/n): ")
+                                if confirm.lower() == "y":
+                                    run(f"DELETE FROM nurse_details WHERE name='{name}'", commit=True)
+                                    print("Deleted Successfully!")
+                            else:
+                                print("No data found.")
+
+                        elif del_choice == "3":
+                            name = input("Worker Name to delete: ")
+                            rows = run(f"SELECT * FROM other_workers_details WHERE name='{name}'")
+                            if rows:
+                                display(["NAME","AGE","ADDRESS","CONTACT","MONTHLY_SALARY"], rows[0])
+                                confirm = input("Delete? (y/n): ")
+                                if confirm.lower() == "y":
+                                    run(f"DELETE FROM other_workers_details WHERE name='{name}'", commit=True)
+                                    print("Deleted Successfully!")
+                            else:
+                                print("No data found.")
+
+                    elif admin_choice == "4":
+                        break  # Exit administration
+
+                # ------------------ PATIENT DETAILS ------------------
+                elif menu == "2":
+                    print("\n1. Show Patients\n2. Add Patient\n3. Discharge Patient\n4. Exit")
+                    pat_choice = input("Enter choice: ")
+
+                    if pat_choice == "1":
+                        rows = run("SELECT * FROM patient_detail")
+                        isEmpty(rows)
+                        for i, row in enumerate(rows, start=1):
+                            print(f"Patient {i}:")
+                            display(["NAME","GENDER","AGE","ADDRESS","CONTACT"], row)
+
+                    elif pat_choice == "2":
+                        name = input("Patient Name: ")
+                        gender = input("Gender: ")
+                        age = int(input("Age: "))
+                        addr = input("Address: ")
+                        contact = input("Contact: ")
+                        run(f"INSERT INTO patient_detail VALUES('{name}','{gender}',{age},'{addr}','{contact}')", commit=True)
+                        print("Patient Added Successfully!")
+
+                    elif pat_choice == "3":
+                        name = input("Patient Name to discharge: ")
+                        rows = run(f"SELECT * FROM patient_detail WHERE name='{name}'")
+                        if rows:
+                            display(["NAME","GENDER","AGE","ADDRESS","CONTACT"], rows[0])
+                            paid = input("Has the patient paid bills? (y/n): ")
+                            if paid.lower() == "y":
+                                run(f"DELETE FROM patient_detail WHERE name='{name}'", commit=True)
+                                print("Patient Discharged Successfully!")
+                        else:
+                            print("No data found.")
+
+                    elif pat_choice == "4":
+                        break
+
+                elif menu == "3":
+                    print("Signing out...\n")
+                    break
+
+    elif choice == "3":
+        print("Thanks for visiting CityHospital 😊")
+        break
+
+    else:
+        print("Invalid choice. Try again.\n")
